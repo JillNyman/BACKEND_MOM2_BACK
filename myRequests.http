@@ -1,0 +1,13 @@
+
+
+POST http://127.0.0.1:2784/veckans_film HTTP/1.1
+content-type: application/json
+
+{
+    "title": "sample",
+    "release_date": "2024-03-03",
+    "keywords": "allt möjligt",
+    "url": "www.aftonbladet.se",
+    "views": 123
+
+}
