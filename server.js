@@ -6,10 +6,10 @@ const bodyParser = require('body-parser');
 const app = express();
 app.use(cors());
 const port = process.env.port || 2788;
-//app.set('view engine', 'ejs'); //för frontend
 
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({extended: true}));
+
 // MIDDLEWARE
 app.use(express.json());
 
@@ -18,12 +18,11 @@ require('dotenv').config();
 //Anslut till databas
 const db = new sqlite3.Database("./db/episodes.db");
 
-
 //Sökvägar
 //GET-anrop till databas
 app.get("/episodes", (req, res) => {
     res.json({message: "Welcome to my API"});
-    console.log("Databas startad");
+    console.log("Database connected");
 });
 
 //GET-anrop till tabellen
@@ -31,12 +30,12 @@ app.get('/cv', (req, res) => { // <---
     
     db.all('SELECT * FROM cv;', (err, rows) => {
         if(err) {
-            res.status(500).json({error: "Något gick fel: " + err});
+            res.status(500).json({error: "Something went wrong: " + err});
             return;
         }
        //Kontrollera resultatet
        if(rows.length === 0){
-        res.status(404).json({message: "Inga poster funna"});
+        res.status(404).json({message: "No posts in table found"});
        }else{
         res.json(rows);
         console.table(rows);
@@ -102,11 +101,23 @@ app.put("/cv/:id", (req, res) => {
     let enddate = req.body.enddate;
     let description = req.body.description;
 
-    let stmt = db.prepare("UPDATE cv SET companyname=?, jobtitle=?, location=?, startdate=?, enddate=?, description=? WHERE id=?;");
-    stmt.run(companyname, jobtitle, location, startdate, enddate, description, id);
-    stmt.finalize();
+    if(!companyname || !jobtitle || !location || !startdate || !enddate || !description) {
+        return res.status(400).json({error: "One or more field is empty."});
+    }
 
-    console.log("Posten uppdaterad: " + res);
+    let sql = `UPDATE cv SET companyname=?, jobtitle=?, location=?, startdate=?, enddate=?, description=? WHERE id=?`;
+
+    let stmt = db.prepare(sql);
+
+  
+    stmt.run([companyname, jobtitle, location, startdate, enddate, description, id], function(err) {
+        if(err){
+            return res.status(500).json({error: "Database was not updated"});
+        }
+
+        res.json({message: `Posten with id: ${id} was pdates.`});
+    });
+    stmt.finalize();  
 
     });
 
